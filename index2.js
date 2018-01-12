@@ -68,64 +68,7 @@ function render() {
   renderer.render(scene, camera);
 }
 
-function drawDots() {
-  var dots = createWordDots('5');
-  var meshes = [];
-  var texture = [];
 
-  texture.push(new THREE.TextureLoader().load('./img/p3.jpg'));
-  texture.push(new THREE.TextureLoader().load('./img/a.png'));
-  texture.push(new THREE.TextureLoader().load('./img/b.png'));
-  texture.push(new THREE.TextureLoader().load('./img/c.png'));
-  for (var i=0; i< dots.length; i++) {
-    var index = randomRange(0, 4);
-    var mesh = createMesh(texture[index]);
-    mesh.position.x = dots[i].x * 2;
-    mesh.position.y = -dots[i].y * 2;
-    mesh.position.z = dots[i].z;
-    mesh.scale.x = mesh.scale.y = .3;
-    meshes.push(mesh);
-    scene.add(mesh);
-  }
-}
-function createWordDots(text) {
-  var canvas = document.createElement('canvas');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  var context = canvas.getContext('2d');
-  context.save();
-  context.font = "900px 微软雅黑 bold";
-  context.fillStyle = "rgba(168,168,168,1)";
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-  context.fillText(text, canvas.width / 2, canvas.height / 2);
-  context.restore();
-  var imgData = context.getImageData(0, 0, canvas.width, canvas.height);
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  var dots = [];
-  for (var x = 0; x < imgData.width; x += 20) {
-    for (var y = 0; y < imgData.height; y += 20) {
-      var i = (y * imgData.width + x) * 4;
-      if (imgData.data[i] >= 128) {
-        var dot = new Dot(x - 10 - imgData.width / 2, y - 10 - imgData.height / 2, 0, 10);
-        dots.push(dot);
-      }
-    }
-  }
-  return dots;
-}
-function Dot(centerX, centerY, centerZ, radius) {
-  this.dx = centerX;
-  this.dy = centerY;
-  this.dz = centerZ;
-  this.tx = 0;
-  this.ty = 0;
-  this.tz = 0;
-  this.z = centerZ;
-  this.x = centerX;
-  this.y = centerY;
-  this.radius = radius;
-}
 function createStars() {
   var particle, material;
   var spriteMap = new THREE.TextureLoader().load('./img/star_preview.png');
@@ -345,5 +288,134 @@ function getTextData(text) {
   }
 }
 
+function CountAni(text) {
+  this.text = text;
+  this.fallbacklength = 200;
+  this.object = new THREE.Object3D(); // mesh集合 方便统一删除
+  this.dots = this.getDots(this.text);
+  scene.add(this.object);
+  // this.meshes = 
+  // scene.add(this.object);
+}
+CountAni.prototype.run = function () {
+  TWEEN.removeAll();
+  var dot;
+  for (var i=0;i < this.dots.length; i++) {
+    dot = this.dots[i];
+    dot.x = dot.rx;
+    dot.y = dot.ry;
+    dot.z = dot.rz;
+    dot.paint();
+    new TWEEN.Tween(dot.mesh.position)
+      .to({
+        x: dot.dx,
+        y: dot.dy,
+        z: dot.dz
+      }, 500)
+      .easing( TWEEN.Easing.Exponential.InOut )
+      .start();
+  }
+}
+CountAni.prototype.getDots = function (text) {
+  var canvas = document.createElement('canvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  var context = canvas.getContext('2d');
+  context.save();
+  context.font = "900px 微软雅黑 bold";
+  context.fillStyle = "rgba(168,168,168,1)";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(text, canvas.width / 2, canvas.height / 2);
+  context.restore();
+  var imgData = context.getImageData(0, 0, canvas.width, canvas.height);
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  var dots = [];
+  for (var x = 0; x < imgData.width; x += 20) {
+    for (var y = 0; y < imgData.height; y += 20) {
+      var i = (y * imgData.width + x) * 4;
+      if (imgData.data[i] >= 128) {
+        var dot = new Dot(x - 10 - imgData.width / 2, y - 10 - imgData.height / 2, 0, 10, canvas.width, canvas.height, this.fallbacklength, texture);
+        dot.paint();
+        dots.push(dot);
+        this.object.add(dot.mesh);
+      }
+    }
+  }
+  return dots;
+}
+// function drawDots() {
+//   var dots = createWordDots('5');
+//   var meshes = [];
+//   var texture = [];
+
+//   texture.push(new THREE.TextureLoader().load('./img/p3.jpg'));
+//   texture.push(new THREE.TextureLoader().load('./img/a.png'));
+//   texture.push(new THREE.TextureLoader().load('./img/b.png'));
+//   texture.push(new THREE.TextureLoader().load('./img/c.png'));
+//   for (var i=0; i< dots.length; i++) {
+//     var index = randomRange(0, 4);
+//     var mesh = createMesh(texture[index]);
+//     mesh.position.x = dots[i].x * 2;
+//     mesh.position.y = -dots[i].y * 2;
+//     mesh.position.z = dots[i].z;
+//     mesh.scale.x = mesh.scale.y = .3;
+//     meshes.push(mesh);
+//     scene.add(mesh);
+//   }
+// }
+// function createWordDots(text) {
+//   var canvas = document.createElement('canvas');
+//   canvas.width = window.innerWidth;
+//   canvas.height = window.innerHeight;
+//   var context = canvas.getContext('2d');
+//   context.save();
+//   context.font = "900px 微软雅黑 bold";
+//   context.fillStyle = "rgba(168,168,168,1)";
+//   context.textAlign = "center";
+//   context.textBaseline = "middle";
+//   context.fillText(text, canvas.width / 2, canvas.height / 2);
+//   context.restore();
+//   var imgData = context.getImageData(0, 0, canvas.width, canvas.height);
+//   context.clearRect(0, 0, canvas.width, canvas.height);
+//   var dots = [];
+//   for (var x = 0; x < imgData.width; x += 20) {
+//     for (var y = 0; y < imgData.height; y += 20) {
+//       var i = (y * imgData.width + x) * 4;
+//       if (imgData.data[i] >= 128) {
+//         var dot = new Dot(x - 10 - imgData.width / 2, y - 10 - imgData.height / 2, 0, 10);
+//         dots.push(dot);
+//       }
+//     }
+//   }
+//   return dots;
+// }
+function Dot(centerX, centerY, centerZ, radius, width, height, length, texture) {
+  this.dx = centerX;
+  this.dy = centerY;
+  this.dz = centerZ;
+  this.tx = 0;
+  this.ty = 0;
+  this.tz = 0;
+  this.z = centerZ;
+  this.x = centerX;
+  this.y = centerY;
+  this.rx = Math.random() * width;
+  this.ty = Math.random() * height;
+  this.tz = Math.random() * length * 2 - length;
+
+  this.radius = radius;
+  // this.texture = texture;
+  this.mesh = createMesh(texture);
+}
+Dot.prototype.remove = function (object) {
+  // this.mesh.visible = false;
+  object.remove(this.mesh);
+}
+Dot.prototype.paint = function () {
+  this.mesh.position.x = this.x;
+  this.mesh.position.y = this.y;
+  this.mesh.position.z = this.z;
+}
 init();
-drawDots();
+// drawDots();
