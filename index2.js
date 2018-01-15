@@ -12,7 +12,8 @@ var targets = {
 var objects = [], // 普通动画对象
     stars = [],   // 星星对象
     obj3D = new THREE.Object3D(), // 普通动画对象合集
-    dots = [];    // 文字等动态动画对象列表
+    dots = [],    // 文字等动态动画对象列表
+    intervalID;   // 普通动画setinterval id
 // 头像
 var personArray = [];
 for(var i=0;i<199;i++){
@@ -209,7 +210,7 @@ function createObjects(texture) {
   }
 
   var ini = 0;
-  setInterval(function () {
+  intervalID = setInterval(function () {
     ini = ini >= 3 ? 0 : ini;
     ini++;
     switch(ini) {
@@ -283,6 +284,7 @@ function getTextData(text) {
       var i = ( y * imgData.width + x ) * 4;
       if (imgData.data[i] >= 128) {
         console.log(x-3, y-3, 0, 3);
+
       }
     }
   }
@@ -316,6 +318,25 @@ CountAni.prototype.run = function () {
       .start();
   }
 }
+CountAni.prototype.divert = function () {
+  TWEEN.removeAll();
+  var dot;
+  for (var i=0;i < this.dots.length; i++) {
+    dot = this.dots[i];
+    dot.x = dot.dx;
+    dot.y = dot.dy;
+    dot.z = dot.dz;
+    dot.paint();
+    new TWEEN.Tween(dot.mesh.position)
+      .to({
+        x: dot.rx,
+        y: dot.ry,
+        z: dot.rz
+      }, 500)
+      .easing( TWEEN.Easing.Exponential.InOut )
+      .start();
+  }
+}
 CountAni.prototype.getDots = function (text) {
   var canvas = document.createElement('canvas');
   canvas.width = window.innerWidth;
@@ -331,11 +352,19 @@ CountAni.prototype.getDots = function (text) {
   var imgData = context.getImageData(0, 0, canvas.width, canvas.height);
   context.clearRect(0, 0, canvas.width, canvas.height);
   var dots = [];
+
+  var textureList = [];
+  textureList.push(new THREE.TextureLoader().load('./img/p3.jpg'));
+  textureList.push(new THREE.TextureLoader().load('./img/a.png'));
+  textureList.push(new THREE.TextureLoader().load('./img/b.png'));
+  textureList.push(new THREE.TextureLoader().load('./img/c.png'));
+  var texture;
   for (var x = 0; x < imgData.width; x += 20) {
     for (var y = 0; y < imgData.height; y += 20) {
       var i = (y * imgData.width + x) * 4;
       if (imgData.data[i] >= 128) {
-        var dot = new Dot(x - 10 - imgData.width / 2, y - 10 - imgData.height / 2, 0, 10, canvas.width, canvas.height, this.fallbacklength, texture);
+        texture = textureList[randomRange(0, 4)];
+        var dot = new Dot(x - 10 - imgData.width / 2, y - 10 - imgData.height / 2, 1000, 10, canvas.width, canvas.height, this.fallbacklength, texture);
         dot.paint();
         dots.push(dot);
         this.object.add(dot.mesh);
@@ -344,65 +373,22 @@ CountAni.prototype.getDots = function (text) {
   }
   return dots;
 }
-// function drawDots() {
-//   var dots = createWordDots('5');
-//   var meshes = [];
-//   var texture = [];
-
-//   texture.push(new THREE.TextureLoader().load('./img/p3.jpg'));
-//   texture.push(new THREE.TextureLoader().load('./img/a.png'));
-//   texture.push(new THREE.TextureLoader().load('./img/b.png'));
-//   texture.push(new THREE.TextureLoader().load('./img/c.png'));
-//   for (var i=0; i< dots.length; i++) {
-//     var index = randomRange(0, 4);
-//     var mesh = createMesh(texture[index]);
-//     mesh.position.x = dots[i].x * 2;
-//     mesh.position.y = -dots[i].y * 2;
-//     mesh.position.z = dots[i].z;
-//     mesh.scale.x = mesh.scale.y = .3;
-//     meshes.push(mesh);
-//     scene.add(mesh);
-//   }
-// }
-// function createWordDots(text) {
-//   var canvas = document.createElement('canvas');
-//   canvas.width = window.innerWidth;
-//   canvas.height = window.innerHeight;
-//   var context = canvas.getContext('2d');
-//   context.save();
-//   context.font = "900px 微软雅黑 bold";
-//   context.fillStyle = "rgba(168,168,168,1)";
-//   context.textAlign = "center";
-//   context.textBaseline = "middle";
-//   context.fillText(text, canvas.width / 2, canvas.height / 2);
-//   context.restore();
-//   var imgData = context.getImageData(0, 0, canvas.width, canvas.height);
-//   context.clearRect(0, 0, canvas.width, canvas.height);
-//   var dots = [];
-//   for (var x = 0; x < imgData.width; x += 20) {
-//     for (var y = 0; y < imgData.height; y += 20) {
-//       var i = (y * imgData.width + x) * 4;
-//       if (imgData.data[i] >= 128) {
-//         var dot = new Dot(x - 10 - imgData.width / 2, y - 10 - imgData.height / 2, 0, 10);
-//         dots.push(dot);
-//       }
-//     }
-//   }
-//   return dots;
-// }
 function Dot(centerX, centerY, centerZ, radius, width, height, length, texture) {
-  this.dx = centerX;
-  this.dy = centerY;
+  // 目标点坐标
+  this.dx = centerX * 2;
+  this.dy = -centerY * 2;
   this.dz = centerZ;
-  this.tx = 0;
-  this.ty = 0;
-  this.tz = 0;
-  this.z = centerZ;
-  this.x = centerX;
-  this.y = centerY;
-  this.rx = Math.random() * width;
-  this.ty = Math.random() * height;
-  this.tz = Math.random() * length * 2 - length;
+
+  // 随机点坐标
+  this.rx = Math.random() * width - window.innerWidth / 2;
+  this.ry = Math.random() * height - window.innerHeight / 2;
+  // this.rz = Math.random() * length * 2 - length;
+  this.rz = Math.random() * 2000 + 500;
+
+  // 实际显示点坐标
+  this.x = this.rx;
+  this.y = this.ry;
+  this.z = this.rz;
 
   this.radius = radius;
   // this.texture = texture;
@@ -416,6 +402,24 @@ Dot.prototype.paint = function () {
   this.mesh.position.x = this.x;
   this.mesh.position.y = this.y;
   this.mesh.position.z = this.z;
+  this.mesh.scale.x = this.mesh.scale.y = .3;
 }
+
+document.getElementById('countdown').addEventListener('click', function () {
+  clearInterval(intervalID);
+  var num = 10;
+  var animation;
+  var intID = setInterval(function() {
+    if (obj3D) scene.remove(obj3D);
+    if (num > 0) {
+      if (animation) scene.remove(animation.object);
+      animation = new CountAni(num);
+      animation.run();
+      num--;
+    } else {
+      clearInterval(intID);
+    }
+  }, 1000);
+})
+
 init();
-// drawDots();
