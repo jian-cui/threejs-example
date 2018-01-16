@@ -14,6 +14,13 @@ var objects = [], // 普通动画对象
     obj3D = new THREE.Object3D(), // 普通动画对象合集
     dots = [],    // 文字等动态动画对象列表
     intervalID;   // 普通动画setinterval id
+
+var textureList = [];
+textureList.push(new THREE.TextureLoader().load('./img/p3.jpg'));
+textureList.push(new THREE.TextureLoader().load('./img/a.png'));
+textureList.push(new THREE.TextureLoader().load('./img/b.png'));
+textureList.push(new THREE.TextureLoader().load('./img/c.png'));
+  
 // 头像
 var personArray = [];
 for(var i=0;i<199;i++){
@@ -126,16 +133,16 @@ function createMesh(texture) {
 function createObjects(texture) {
   var object;
   // 点集
-  var texture = [];
+  // var texture = [];
 
-  texture.push(new THREE.TextureLoader().load('./img/p3.jpg'));
-  texture.push(new THREE.TextureLoader().load('./img/a.png'));
-  texture.push(new THREE.TextureLoader().load('./img/b.png'));
-  texture.push(new THREE.TextureLoader().load('./img/c.png'));
+  // texture.push(new THREE.TextureLoader().load('./img/p3.jpg'));
+  // texture.push(new THREE.TextureLoader().load('./img/a.png'));
+  // texture.push(new THREE.TextureLoader().load('./img/b.png'));
+  // texture.push(new THREE.TextureLoader().load('./img/c.png'));
 
   for (var i =0; i < table.length; i++) {
     var index = randomRange(0, 4);
-    object = createMesh(texture[index]);
+    object = createMesh(textureList[index]);
     // object.position.x = Math.random() * 4000 - 2000;
     // object.position.y = Math.random() * 4000 - 2000;
     object.position.x = Math.random() * 4000 - 8000;
@@ -290,7 +297,61 @@ function getTextData(text) {
   }
 }
 
-function CountAni(text) {
+// 动画父类 虚类
+function SuperVirtualAni () {
+}
+SuperVirtualAni.prototype = {
+  constructor: SuperVirtualAni,
+  // 聚合动画
+  run: function () {
+    TWEEN.removeAll();
+    var dot;
+    for (var i=0;i < this.dots.length; i++) {
+      dot = this.dots[i];
+      dot.x = dot.rx;
+      dot.y = dot.ry;
+      dot.z = dot.rz;
+      dot.paint();
+      new TWEEN.Tween(dot.mesh.position)
+        .to({
+          x: dot.dx,
+          y: dot.dy,
+          z: dot.dz
+        }, 500)
+        .easing( TWEEN.Easing.Exponential.InOut )
+        .start();
+    }
+  },
+  // 分散动画
+  divert: function () {
+    TWEEN.removeAll();
+    var dot;
+    for (var i=0;i < this.dots.length; i++) {
+      dot = this.dots[i];
+      dot.x = dot.dx;
+      dot.y = dot.dy;
+      dot.z = dot.dz;
+      dot.paint();
+      new TWEEN.Tween(dot.mesh.position)
+        .to({
+          x: dot.rx,
+          y: dot.ry,
+          z: dot.rz
+        }, 500)
+        .easing( TWEEN.Easing.Exponential.InOut )
+        .start();
+    }
+  },
+  getDots: function () {
+
+  }
+}
+
+/* 文字动画 */
+function TextAni(text) {
+  // 继承父类
+  SuperVirtualAni.call(this);
+
   this.text = text;
   this.fallbacklength = 200;
   this.object = new THREE.Object3D(); // mesh集合 方便统一删除
@@ -299,45 +360,9 @@ function CountAni(text) {
   // this.meshes = 
   // scene.add(this.object);
 }
-CountAni.prototype.run = function () {
-  TWEEN.removeAll();
-  var dot;
-  for (var i=0;i < this.dots.length; i++) {
-    dot = this.dots[i];
-    dot.x = dot.rx;
-    dot.y = dot.ry;
-    dot.z = dot.rz;
-    dot.paint();
-    new TWEEN.Tween(dot.mesh.position)
-      .to({
-        x: dot.dx,
-        y: dot.dy,
-        z: dot.dz
-      }, 500)
-      .easing( TWEEN.Easing.Exponential.InOut )
-      .start();
-  }
-}
-CountAni.prototype.divert = function () {
-  TWEEN.removeAll();
-  var dot;
-  for (var i=0;i < this.dots.length; i++) {
-    dot = this.dots[i];
-    dot.x = dot.dx;
-    dot.y = dot.dy;
-    dot.z = dot.dz;
-    dot.paint();
-    new TWEEN.Tween(dot.mesh.position)
-      .to({
-        x: dot.rx,
-        y: dot.ry,
-        z: dot.rz
-      }, 500)
-      .easing( TWEEN.Easing.Exponential.InOut )
-      .start();
-  }
-}
-CountAni.prototype.getDots = function (text) {
+TextAni.prototype = new SuperVirtualAni();
+TextAni.prototype.constructor = TextAni;
+TextAni.prototype.getDots = function (text) {
   var canvas = document.createElement('canvas');
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -353,18 +378,18 @@ CountAni.prototype.getDots = function (text) {
   context.clearRect(0, 0, canvas.width, canvas.height);
   var dots = [];
 
-  var textureList = [];
-  textureList.push(new THREE.TextureLoader().load('./img/p3.jpg'));
-  textureList.push(new THREE.TextureLoader().load('./img/a.png'));
-  textureList.push(new THREE.TextureLoader().load('./img/b.png'));
-  textureList.push(new THREE.TextureLoader().load('./img/c.png'));
+  // var textureList = [];
+  // textureList.push(new THREE.TextureLoader().load('./img/p3.jpg'));
+  // textureList.push(new THREE.TextureLoader().load('./img/a.png'));
+  // textureList.push(new THREE.TextureLoader().load('./img/b.png'));
+  // textureList.push(new THREE.TextureLoader().load('./img/c.png'));
   var texture;
   for (var x = 0; x < imgData.width; x += 20) {
     for (var y = 0; y < imgData.height; y += 20) {
       var i = (y * imgData.width + x) * 4;
       if (imgData.data[i] >= 128) {
         texture = textureList[randomRange(0, 4)];
-        var dot = new Dot(x - 10 - imgData.width / 2, y - 10 - imgData.height / 2, 1000, 10, canvas.width, canvas.height, this.fallbacklength, texture);
+        var dot = new Dot(x - 10 - imgData.width / 2, y - 10 - imgData.height / 2, 1000, texture);
         dot.paint();
         dots.push(dot);
         this.object.add(dot.mesh);
@@ -373,15 +398,75 @@ CountAni.prototype.getDots = function (text) {
   }
   return dots;
 }
-function Dot(centerX, centerY, centerZ, radius, width, height, length, texture) {
+
+/* 图片动画 */
+function ImgAni (base64) {
+  SuperVirtualAni.call(this);
+
+  var that = this;
+  this.object = new THREE.Object3D();
+  this.dots = [];
+  this.img = new Image();
+  this.img.src = base64;
+  this.img.onload = function () {
+    console.log(that.img)
+    that.getDots(that.img);
+  }
+}
+ImgAni.prototype = new SuperVirtualAni();
+ImgAni.prototype.constructor = ImgAni;
+ImgAni.prototype.draw = function () {
+  scene.add(this.object);
+  this.run();
+}
+ImgAni.prototype.getDots = function (img) {
+  var canvas = document.createElement('canvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  var ctx = canvas.getContext('2d');
+
+  var logoParticles = [],
+    particleIndex = 0;
+  
+  var posX = (window.innerWidth -  img.width) / 2,
+    posY = (window.innerHeight - img.height) / 2;
+
+  ctx.drawImage(img, posX, posY);
+
+  var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height),
+    pixels = imgData.data;
+  
+  var texture;
+
+  for (var y = 0; y < imgData.height; y += 20) {
+    for (var x = 0; x < imgData.width; x += 20) {
+      var alpha = pixels[((imgData.width * y) + x) * 4 + 20];
+      if (alpha > 0) {
+        texture = textureList[randomRange(0, 4)];
+        // logoParticles.push(new Dot(x, y, texture));
+        var dot = new Dot(x - 10 - imgData.width / 2, y - 10 - imgData.height / 2, 1000, texture);
+        dot.paint();
+        this.object.add(dot.mesh);
+        logoParticles.push(dot);
+      }
+    }
+  }
+  this.dots = logoParticles;
+}
+
+
+
+
+
+function Dot(centerX, centerY, centerZ, texture) {
   // 目标点坐标
   this.dx = centerX * 2;
   this.dy = -centerY * 2;
   this.dz = centerZ;
 
   // 随机点坐标
-  this.rx = Math.random() * width - window.innerWidth / 2;
-  this.ry = Math.random() * height - window.innerHeight / 2;
+  this.rx = Math.random() * window.innerWidth - window.innerWidth / 2;
+  this.ry = Math.random() * window.innerHeight - window.innerHeight / 2;
   // this.rz = Math.random() * length * 2 - length;
   this.rz = Math.random() * 2000 + 500;
 
@@ -390,12 +475,9 @@ function Dot(centerX, centerY, centerZ, radius, width, height, length, texture) 
   this.y = this.ry;
   this.z = this.rz;
 
-  this.radius = radius;
-  // this.texture = texture;
   this.mesh = createMesh(texture);
 }
-Dot.prototype.remove = function (object) {
-  // this.mesh.visible = false;
+Dot.prototype.removeFrom = function (object) {
   object.remove(this.mesh);
 }
 Dot.prototype.paint = function () {
@@ -413,13 +495,16 @@ document.getElementById('countdown').addEventListener('click', function () {
     if (obj3D) scene.remove(obj3D);
     if (num > 0) {
       if (animation) scene.remove(animation.object);
-      animation = new CountAni(num);
+      animation = new TextAni(num);
       animation.run();
       num--;
     } else {
+      scene.remove(animation.object);
+      logoAni.draw();
       clearInterval(intID);
     }
   }, 1000);
 })
 
 init();
+logoAni = new ImgAni('./img/logo.png');
