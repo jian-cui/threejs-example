@@ -6,7 +6,7 @@ var targets = {
   sphere: [],
   helix: [],
   grid: [],
-  num5: []
+  end: []
 }
 
 var objects = [], // 普通动画对象
@@ -60,15 +60,18 @@ function init() {
   document.getElementById('container').appendChild(renderer.domElement);
 
   createStars();
-  createObjects();
+  // createObjects();
   update();
 }
 
 function update() {
   requestAnimationFrame(update);
-  // scene.rotation.y += 0.006;
-  obj3D.rotation.y += 0.006;
+  var rotation;
+  if (geoAni && geoAni.show) { 
+    geoAni.object.rotation.y += 0.006;
+  }
   TWEEN.update();
+
   updateStars();
   render();
 }
@@ -130,7 +133,179 @@ function createMesh(texture) {
   return new THREE.Mesh(geometry, material);
 }
 
-function createObjects(texture) {
+// function createObjects(texture) {
+//   var object;
+//   // 点集
+//   // var texture = [];
+
+//   // texture.push(new THREE.TextureLoader().load('./img/p3.jpg'));
+//   // texture.push(new THREE.TextureLoader().load('./img/a.png'));
+//   // texture.push(new THREE.TextureLoader().load('./img/b.png'));
+//   // texture.push(new THREE.TextureLoader().load('./img/c.png'));
+
+//   for (var i =0; i < table.length; i++) {
+//     var index = randomRange(0, 4);
+//     object = createMesh(textureList[index]);
+//     object.position.x = Math.random() * 4000 - 8000;
+//     object.position.y = Math.random() * 4000 - 2000;
+//     object.position.z = Math.random() * 4000 - 2000;
+//     objects.push(object);
+//     obj3D.add(object);
+//   }
+//   scene.add(obj3D)
+//   // 平面板
+//   for (var i =0; i < table.length; i++) {
+//     object = new THREE.Object3D();
+//     object.position.x = ( table [i].p_x * 140 ) - 1330;
+//     object.position.y = - (table[i].p_y * 180 ) + 990;
+//     targets.table.push(object);
+//   }
+
+//   // 球体
+//   var vector = new THREE.Vector3();
+//   var spherical = new THREE.Spherical();
+//   for (var i =0, l = table.length; i < l; i++) {
+//     var phi = Math.acos( -1 + ( 2 * i) / l);
+//     var theta = Math.sqrt( l * Math.PI ) * phi;
+
+//     object = new THREE.Object3D();
+
+//     spherical.set( 800, phi, theta );
+
+//     object.position.setFromSpherical( spherical )
+
+//     vector.copy( object.position ).multiplyScalar( 2 );
+
+//     object.lookAt( vector );
+
+//     targets.sphere.push( object );
+//   }
+
+//   // // helix
+//   var cylindrical = new THREE.Cylindrical();
+//   for (var i =0; i < table.length; i++) {
+
+//     var theta = i * 0.75 + Math.PI;
+//     var y = - ( i * 5 ) + 450;
+
+//     object = new THREE.Object3D();
+
+//     cylindrical.set(900, theta, y);
+
+//     object.position.setFromCylindrical( cylindrical);
+
+//     vector.x = object.position.x * 2;
+//     vector.y = object.position.y;
+//     vector.z = object.position.z * 2;
+
+//     object.lookAt( vector );
+
+//     targets.helix.push(object);
+//   }
+
+//   // grid
+//   for (var i = 0, l = table.length; i < l; i++) {
+
+//     object = new THREE.Object3D();
+
+//     object.position.x = ( ( i % 5 ) * 400 ) - 800; // 400 图片的左右间距  800 x轴中心店
+//     object.position.y = ( - ( Math.floor( i / 5 ) % 5 ) * 300 ) + 500;  // 500 y轴中心店
+//     object.position.z = ( Math.floor( i / 25 ) ) * 200 - 800;// 300调整 片间距 800z轴中心店
+
+//     targets.grid.push( object );
+//   }
+
+//   var ini = 0;
+//   intervalID = setInterval(function () {
+//     ini = ini >= 4 ? 0 : ini;
+//     ini++;
+//     switch(ini) {
+//       case 1:
+//         transform(targets.sphere, 1000);
+//         break;
+//       case 2:
+//         transform(targets.table, 1000);
+//         break;
+//       case 3:
+//         transform(targets.helix, 1000);
+//         break;
+//       case 4:
+//         transform(targets.grid, 1000);
+//         break;
+//     }
+//   }, 8000);
+
+//   transform( targets.table, 2000 );
+// }
+
+
+
+function GeoAni() {
+  this.targets = {
+    table: [],
+    sphere: [],
+    helix: [],
+    grid: [],
+    num5: [],
+    end: []
+  }
+  this.objectList = [];
+  this.object = new THREE.Object3D();
+  this.init();
+  this.show = true;
+
+  // 重置位置
+  this.reset = function () {
+    var object;
+    for (var i =0; i < table.length; i++) {
+      object = this.objectList[i];
+      object.position.x = Math.random() * 4000 - 8000;
+      object.position.y = Math.random() * 4000 - 2000;
+      object.position.z = Math.random() * 4000 - 2000;
+    }
+    this.show = true;
+    scene.add(this.object);
+  }
+  this.destory = function () {
+    this.show = false;
+    this.object.rotation.y = 0;
+    scene.remove(this.object);
+  }
+}
+GeoAni.prototype.run = function (targetList, duration) {
+  // 这里
+  TWEEN.removeAll();
+
+  for (var i = 0; i < this.objectList.length; i++) {
+    var object = this.objectList[i];
+    var target = targetList[i];  
+
+    new TWEEN.Tween( object.position )
+      .to( {
+        x: target.position.x, 
+        y: target.position.y, 
+        z: target.position.z
+      },  Math.random() * duration + duration)
+      .easing( TWEEN.Easing.Exponential.InOut )
+      .start();
+    
+    new TWEEN.Tween( object.rotation )
+      .to({
+        x: target.rotation.x, 
+        y: target.rotation.y, 
+        z: target.rotation.z
+      }, Math.random() * duration + duration)
+      .easing( TWEEN.Easing.Exponential.InOut )
+      .start();
+  }
+
+  new TWEEN.Tween( this )
+    .to( {}, duration * 2 )
+    .onUpdate( render )
+    .start();
+
+}
+GeoAni.prototype.init = function () {
   var object;
   // 点集
   // var texture = [];
@@ -143,23 +318,19 @@ function createObjects(texture) {
   for (var i =0; i < table.length; i++) {
     var index = randomRange(0, 4);
     object = createMesh(textureList[index]);
-    // object.position.x = Math.random() * 4000 - 2000;
-    // object.position.y = Math.random() * 4000 - 2000;
     object.position.x = Math.random() * 4000 - 8000;
     object.position.y = Math.random() * 4000 - 2000;
     object.position.z = Math.random() * 4000 - 2000;
-    // object.position.z = 1000;
-    objects.push(object);
-    // scene.add( object );
-    obj3D.add(object);
+    this.objectList.push(object);
+    this.object.add(object);
   }
-  scene.add(obj3D)
+  scene.add(this.object)
   // 平面板
   for (var i =0; i < table.length; i++) {
     object = new THREE.Object3D();
     object.position.x = ( table [i].p_x * 140 ) - 1330;
     object.position.y = - (table[i].p_y * 180 ) + 990;
-    targets.table.push(object);
+    this.targets.table.push(object);
   }
 
   // 球体
@@ -179,7 +350,7 @@ function createObjects(texture) {
 
     object.lookAt( vector );
 
-    targets.sphere.push( object );
+    this.targets.sphere.push( object );
   }
 
   // // helix
@@ -201,7 +372,7 @@ function createObjects(texture) {
 
     object.lookAt( vector );
 
-    targets.helix.push(object);
+    this.targets.helix.push(object);
   }
 
   // grid
@@ -213,29 +384,21 @@ function createObjects(texture) {
     object.position.y = ( - ( Math.floor( i / 5 ) % 5 ) * 300 ) + 500;  // 500 y轴中心店
     object.position.z = ( Math.floor( i / 25 ) ) * 200 - 800;// 300调整 片间距 800z轴中心店
 
-    targets.grid.push( object );
+    this.targets.grid.push( object );
   }
 
-  var ini = 0;
-  intervalID = setInterval(function () {
-    ini = ini >= 3 ? 0 : ini;
-    ini++;
-    switch(ini) {
-      case 1:
-        transform(targets.sphere, 1000);
-        break;
-      case 2:
-        transform(targets.helix, 1000);
-        break;
-      case 3:
-        transform(targets.grid, 1000);
-        break;
-    }
-  }, 8000);
+  // end 散去
+  for (var i = 0, l = table.length; i < l; i++) {
+    object = new THREE.Object3D();
 
-  transform( targets.table, 2000 );
+    object.position.x = Math.random() * 4000 - 8000;
+    object.position.y = Math.random() * 4000 - 2000;
+    object.position.z = Math.random() * 4000 - 2000;
+
+    this.targets.end.push( object );
+
+  }
 }
-
 function transform(targets, duration) {
   // 这里
   TWEEN.removeAll();
@@ -412,10 +575,16 @@ function ImgAni (base64) {
     console.log(that.img)
     that.getDots(that.img);
   }
+  this.show = false;
+  this.destory = function () {
+    this.show = false;
+    scene.remove(this.object);
+  }
 }
 ImgAni.prototype = new SuperVirtualAni();
 ImgAni.prototype.constructor = ImgAni;
 ImgAni.prototype.draw = function () {
+  this.show = true;
   scene.add(this.object);
   this.run();
 }
@@ -506,5 +675,107 @@ document.getElementById('countdown').addEventListener('click', function () {
   }, 1000);
 })
 
+
+
+var api = {
+  setting: 'http://wxscreen5.alltosun.net/checkin3d/api/init',
+  getNewUser: 'http://wxscreen5.alltosun.net/checkin3d/api/get_new_user',
+  getUsers: 'http://wxscreen5.alltosun.net/checkin3d/api/get_default_user'
+}
+
+// 获取动画配置
+// $.post({
+//   url: api.setting,
+//   data: {
+//     company_id: '103866'
+//   },
+//   crossDomain: true,
+//   dataType: 'json',
+//   success: function (data) {
+//     var err = data.error,
+//         dt = data.config;
+    // var ini = 0;
+    // intervalID = setInterval(function () {
+    //   ini = ini >= 4 ? 0 : ini;
+    //   ini++;
+    //   switch(ini) {
+    //     case 1:
+    //       transform(targets.sphere, 1000);
+    //       break;
+    //     case 2:
+    //       transform(targets.table, 1000);
+    //       break;
+    //     case 3:
+    //       transform(targets.helix, 1000);
+    //       break;
+    //     case 4:
+    //       transform(targets.grid, 1000);
+    //       break;
+    //   }
+    // }, 8000);
+  
+    // transform( targets.table, 2000 );
+//   }
+// })
+
 init();
-logoAni = new ImgAni('./img/logo.png');
+
+var geoAni = new GeoAni();
+var textAni;
+var logoAni = new ImgAni('./img/logo.png');
+var ini = 0;
+intervalID = setInterval(function () {
+  ini = ini >= 5 ? 0 : ini;
+  ini++;
+  switch(ini) {
+    case 1:
+      if (logoAni.show) {
+        scene.remove(logoAni.object);
+      }
+      if (!geoAni.show) {
+        geoAni.reset();
+      }
+      geoAni.run(geoAni.targets.sphere, 1000);
+      break;
+    case 2:
+      geoAni.run(geoAni.targets.table, 1000);
+      break;
+    case 3:
+      geoAni.run(geoAni.targets.helix, 1000);
+      break;
+    case 4:
+      geoAni.run(geoAni.targets.grid, 1000);
+      break;
+    case 5:
+      // 隐藏
+      // geoAni.run(geoAni.targets.end, 1000);
+      geoAni.destory();
+      // textAni = new .run();
+      logoAni.draw();
+      break;
+  }
+}, 8000);
+geoAni.run(geoAni.targets.table, 1000);
+
+
+var aniRes = [{
+    "type": "1", // 圆球
+    "time": "60" // 这个效果的播放持续时间
+  },
+  {
+    "type": "2", //一面墙
+    "time": "60"
+  },
+  {
+    "type": "3", // 立方体
+    "time": "60"
+  },
+  {
+    "type": "4", // 圆柱
+    "time": "60"
+  },
+  {
+    "type": "6", // 拼logo
+    "time": "60",
+    "logo": "/slavedev01_store2/setting/checkin3d/2018/01/17/20180117175720000000_1_41425_645.png" // logo的图片
+  }];
