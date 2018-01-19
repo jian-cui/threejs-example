@@ -11,21 +11,14 @@ var targets = {
 
 var objects = [], // 普通动画对象
     stars = [],   // 星星对象
-    obj3D = new THREE.Object3D(), // 普通动画对象合集
     dots = [],    // 文字等动态动画对象列表
     intervalID;   // 普通动画setinterval id
-
-var textureList = [];
-textureList.push(new THREE.TextureLoader().load('./img/p3.jpg'));
-textureList.push(new THREE.TextureLoader().load('./img/a.png'));
-textureList.push(new THREE.TextureLoader().load('./img/b.png'));
-textureList.push(new THREE.TextureLoader().load('./img/c.png'));
   
 // 头像
 var personArray = [];
 for(var i=0;i<199;i++){
   personArray.push({
-          image: "img/a.png"
+    image: "img/a.png"
   });
 };
 
@@ -39,6 +32,7 @@ for (var i = 0; i < personArray.length; i++) {
   table[i].p_x = i % 20 + 1;
   table[i].p_y = Math.floor(i / 20) + 1;
 }
+
 function randomRange(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
 }
@@ -133,114 +127,7 @@ function createMesh(texture) {
   return new THREE.Mesh(geometry, material);
 }
 
-// function createObjects(texture) {
-//   var object;
-//   // 点集
-//   // var texture = [];
-
-//   // texture.push(new THREE.TextureLoader().load('./img/p3.jpg'));
-//   // texture.push(new THREE.TextureLoader().load('./img/a.png'));
-//   // texture.push(new THREE.TextureLoader().load('./img/b.png'));
-//   // texture.push(new THREE.TextureLoader().load('./img/c.png'));
-
-//   for (var i =0; i < table.length; i++) {
-//     var index = randomRange(0, 4);
-//     object = createMesh(textureList[index]);
-//     object.position.x = Math.random() * 4000 - 8000;
-//     object.position.y = Math.random() * 4000 - 2000;
-//     object.position.z = Math.random() * 4000 - 2000;
-//     objects.push(object);
-//     obj3D.add(object);
-//   }
-//   scene.add(obj3D)
-//   // 平面板
-//   for (var i =0; i < table.length; i++) {
-//     object = new THREE.Object3D();
-//     object.position.x = ( table [i].p_x * 140 ) - 1330;
-//     object.position.y = - (table[i].p_y * 180 ) + 990;
-//     targets.table.push(object);
-//   }
-
-//   // 球体
-//   var vector = new THREE.Vector3();
-//   var spherical = new THREE.Spherical();
-//   for (var i =0, l = table.length; i < l; i++) {
-//     var phi = Math.acos( -1 + ( 2 * i) / l);
-//     var theta = Math.sqrt( l * Math.PI ) * phi;
-
-//     object = new THREE.Object3D();
-
-//     spherical.set( 800, phi, theta );
-
-//     object.position.setFromSpherical( spherical )
-
-//     vector.copy( object.position ).multiplyScalar( 2 );
-
-//     object.lookAt( vector );
-
-//     targets.sphere.push( object );
-//   }
-
-//   // // helix
-//   var cylindrical = new THREE.Cylindrical();
-//   for (var i =0; i < table.length; i++) {
-
-//     var theta = i * 0.75 + Math.PI;
-//     var y = - ( i * 5 ) + 450;
-
-//     object = new THREE.Object3D();
-
-//     cylindrical.set(900, theta, y);
-
-//     object.position.setFromCylindrical( cylindrical);
-
-//     vector.x = object.position.x * 2;
-//     vector.y = object.position.y;
-//     vector.z = object.position.z * 2;
-
-//     object.lookAt( vector );
-
-//     targets.helix.push(object);
-//   }
-
-//   // grid
-//   for (var i = 0, l = table.length; i < l; i++) {
-
-//     object = new THREE.Object3D();
-
-//     object.position.x = ( ( i % 5 ) * 400 ) - 800; // 400 图片的左右间距  800 x轴中心店
-//     object.position.y = ( - ( Math.floor( i / 5 ) % 5 ) * 300 ) + 500;  // 500 y轴中心店
-//     object.position.z = ( Math.floor( i / 25 ) ) * 200 - 800;// 300调整 片间距 800z轴中心店
-
-//     targets.grid.push( object );
-//   }
-
-//   var ini = 0;
-//   intervalID = setInterval(function () {
-//     ini = ini >= 4 ? 0 : ini;
-//     ini++;
-//     switch(ini) {
-//       case 1:
-//         transform(targets.sphere, 1000);
-//         break;
-//       case 2:
-//         transform(targets.table, 1000);
-//         break;
-//       case 3:
-//         transform(targets.helix, 1000);
-//         break;
-//       case 4:
-//         transform(targets.grid, 1000);
-//         break;
-//     }
-//   }, 8000);
-
-//   transform( targets.table, 2000 );
-// }
-
-
-
-function GeoAni() {
+function GeoAni(textureList) {
   this.targets = {
     table: [],
     sphere: [],
@@ -249,6 +136,7 @@ function GeoAni() {
     num5: [],
     end: []
   }
+  this.textureList = textureList;
   this.objectList = [];
   this.object = new THREE.Object3D();
   this.init();
@@ -274,7 +162,7 @@ function GeoAni() {
 }
 GeoAni.prototype.run = function (targetList, duration) {
   // 这里
-  TWEEN.removeAll();
+  // TWEEN.removeAll();
 
   for (var i = 0; i < this.objectList.length; i++) {
     var object = this.objectList[i];
@@ -308,16 +196,9 @@ GeoAni.prototype.run = function (targetList, duration) {
 GeoAni.prototype.init = function () {
   var object;
   // 点集
-  // var texture = [];
-
-  // texture.push(new THREE.TextureLoader().load('./img/p3.jpg'));
-  // texture.push(new THREE.TextureLoader().load('./img/a.png'));
-  // texture.push(new THREE.TextureLoader().load('./img/b.png'));
-  // texture.push(new THREE.TextureLoader().load('./img/c.png'));
-
   for (var i =0; i < table.length; i++) {
-    var index = randomRange(0, 4);
-    object = createMesh(textureList[index]);
+    var index = randomRange(0, this.textureList.length);
+    object = createMesh(this.textureList[index]);
     object.position.x = Math.random() * 4000 - 8000;
     object.position.y = Math.random() * 4000 - 2000;
     object.position.z = Math.random() * 4000 - 2000;
@@ -511,10 +392,11 @@ SuperVirtualAni.prototype = {
 }
 
 /* 文字动画 */
-function TextAni(text) {
+function TextAni(text, textureList) {
   // 继承父类
   SuperVirtualAni.call(this);
 
+  this.textureList = textureList;
   this.text = text;
   this.fallbacklength = 200;
   this.object = new THREE.Object3D(); // mesh集合 方便统一删除
@@ -541,17 +423,12 @@ TextAni.prototype.getDots = function (text) {
   context.clearRect(0, 0, canvas.width, canvas.height);
   var dots = [];
 
-  // var textureList = [];
-  // textureList.push(new THREE.TextureLoader().load('./img/p3.jpg'));
-  // textureList.push(new THREE.TextureLoader().load('./img/a.png'));
-  // textureList.push(new THREE.TextureLoader().load('./img/b.png'));
-  // textureList.push(new THREE.TextureLoader().load('./img/c.png'));
   var texture;
   for (var x = 0; x < imgData.width; x += 20) {
     for (var y = 0; y < imgData.height; y += 20) {
       var i = (y * imgData.width + x) * 4;
       if (imgData.data[i] >= 128) {
-        texture = textureList[randomRange(0, 4)];
+        texture = this.textureList[randomRange(0, this.textureList.length)];
         var dot = new Dot(x - 10 - imgData.width / 2, y - 10 - imgData.height / 2, 1000, texture);
         dot.paint();
         dots.push(dot);
@@ -563,10 +440,11 @@ TextAni.prototype.getDots = function (text) {
 }
 
 /* 图片动画 */
-function ImgAni (base64) {
+function ImgAni (base64, textureList) {
   SuperVirtualAni.call(this);
 
   var that = this;
+  this.textureList = textureList;
   this.object = new THREE.Object3D();
   this.dots = [];
   this.img = new Image();
@@ -579,6 +457,21 @@ function ImgAni (base64) {
   this.destory = function () {
     this.show = false;
     scene.remove(this.object);
+  }
+  this.dispear = function () {
+    var dot;
+    for (var i=0;i < this.dots.length; i++) {
+      dot = this.dots[i];
+      // dot.paint();
+      new TWEEN.Tween(dot.mesh.position)
+        .to({
+          x: Math.random() * 4000 + 4000,
+          y: Math.random() * 4000 - 2000,
+          z: Math.random() * 4000 - 2000
+        }, Math.random() * 1000 + 1000)
+        .easing( TWEEN.Easing.Exponential.InOut )
+        .start();
+    }
   }
 }
 ImgAni.prototype = new SuperVirtualAni();
@@ -611,7 +504,7 @@ ImgAni.prototype.getDots = function (img) {
     for (var x = 0; x < imgData.width; x += 20) {
       var alpha = pixels[((imgData.width * y) + x) * 4 + 20];
       if (alpha > 0) {
-        texture = textureList[randomRange(0, 4)];
+        texture = this.textureList[randomRange(0, this.textureList.length)];
         // logoParticles.push(new Dot(x, y, texture));
         var dot = new Dot(x - 10 - imgData.width / 2, y - 10 - imgData.height / 2, 1000, texture);
         dot.paint();
@@ -622,8 +515,6 @@ ImgAni.prototype.getDots = function (img) {
   }
   this.dots = logoParticles;
 }
-
-
 
 
 
@@ -661,7 +552,6 @@ document.getElementById('countdown').addEventListener('click', function () {
   var num = 10;
   var animation;
   var intID = setInterval(function() {
-    if (obj3D) scene.remove(obj3D);
     if (num > 0) {
       if (animation) scene.remove(animation.object);
       animation = new TextAni(num);
@@ -675,7 +565,18 @@ document.getElementById('countdown').addEventListener('click', function () {
   }, 1000);
 })
 
+function onWindowResize() {
 
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize( window.innerWidth, window.innerHeight );
+
+  render();
+
+}
+
+window.addEventListener( 'resize', onWindowResize, false );
 
 var api = {
   setting: 'http://wxscreen5.alltosun.net/checkin3d/api/init',
@@ -683,99 +584,233 @@ var api = {
   getUsers: 'http://wxscreen5.alltosun.net/checkin3d/api/get_default_user'
 }
 
-// 获取动画配置
-// $.post({
-//   url: api.setting,
-//   data: {
-//     company_id: '103866'
-//   },
-//   crossDomain: true,
-//   dataType: 'json',
-//   success: function (data) {
-//     var err = data.error,
-//         dt = data.config;
-    // var ini = 0;
-    // intervalID = setInterval(function () {
-    //   ini = ini >= 4 ? 0 : ini;
-    //   ini++;
-    //   switch(ini) {
-    //     case 1:
-    //       transform(targets.sphere, 1000);
-    //       break;
-    //     case 2:
-    //       transform(targets.table, 1000);
-    //       break;
-    //     case 3:
-    //       transform(targets.helix, 1000);
-    //       break;
-    //     case 4:
-    //       transform(targets.grid, 1000);
-    //       break;
-    //   }
-    // }, 8000);
-  
-    // transform( targets.table, 2000 );
-//   }
-// })
 
 init();
 
-var geoAni = new GeoAni();
+// var geoAni = new GeoAni();
+// var textAni;
+// var logoAni = new ImgAni('./img/logo.png');
+// var ini = 0;
+// intervalID = setInterval(function () {
+//   ini = ini >= 5 ? 0 : ini;
+//   ini++;
+//   switch(ini) {
+//     case 1:
+//       if (logoAni.show) {
+//         // scene.remove(logoAni.object);
+//         logoAni.dispear();
+//       }
+//       // if (!geoAni.show) {
+//       //   geoAni.reset();
+//       // }
+//       geoAni.run(geoAni.targets.sphere, 1000);
+//       break;
+//     case 2:
+//       geoAni.run(geoAni.targets.table, 1000);
+//       break;
+//     case 3:
+//       geoAni.run(geoAni.targets.helix, 1000);
+//       break;
+//     case 4:
+//       geoAni.run(geoAni.targets.grid, 1000);
+//       break;
+//     case 5:
+//       // 隐藏
+//       // geoAni.run(geoAni.targets.end, 1000);
+//       geoAni.destory();
+//       // textAni = new .run();
+//       logoAni.draw();
+//       break;
+//   }
+// }, 8000);
+// geoAni.run(geoAni.targets.table, 1000);
+var geoAni;
 var textAni;
-var logoAni = new ImgAni('./img/logo.png');
-var ini = 0;
-intervalID = setInterval(function () {
-  ini = ini >= 5 ? 0 : ini;
-  ini++;
-  switch(ini) {
-    case 1:
-      if (logoAni.show) {
-        scene.remove(logoAni.object);
+var logoAni;
+var textureList = []; // 默认纹理集合
+
+
+var ws = {},
+sessionId = 'jjabh33fjo77g59s2v4blot5v0', // 客户端标识
+companyId = 103866, // 屏幕标识
+socketUrl = 'ws://wxscreen.alltosun.net/websocket';
+
+
+// 获取默认头像
+$.ajax({
+  url: api.getUsers,
+  type: "POST",
+  dataType: 'json',
+  success: function (result) {
+    var list = result.list;
+    
+    for (var i=0; i < list.length; i++) {
+      // console.log(list[i].avatar);
+      textureList.push(new THREE.TextureLoader().load(list[i].avatar));
+    }
+    initWebsocket(); // 初始化websocket
+    geoAni = new GeoAni(textureList);
+    logoAni = new ImgAni('./img/logo.png', textureList);
+    // 获取动画配置
+    $.ajax({
+      url: api.setting,
+      type: 'POST',
+      dataType: 'json',
+      data: {
+        company_id: 103866
+      },
+      success: function(result) {
+        var config = result.config;
+        var aniList = [];
+        for (var i = 0; i < config.length; i++) {
+          if (config[i].type <= 4) {
+            aniList.push(config[i].type);
+          } else if (config[i].type == 5) {
+            // 倒计时
+
+          } else if (config[i].type == 6) {
+            // logo
+            aniList.push('6');
+            // logoAni = new ImgAni('./img/logo.png', textureList);
+          }
+        }
+        function animationSwitch(index) {
+          switch(parseInt(index)) {
+            case 1:
+              if (logoAni && logoAni.show) {
+                logoAni.dispear();
+              }
+              if (!geoAni.show) {
+                geoAni.reset();
+              }
+              geoAni.run(geoAni.targets.sphere, 1000);
+              break;
+            case 2:
+              geoAni.run(geoAni.targets.table, 1000);
+              break;
+            case 3:
+              geoAni.run(geoAni.targets.helix, 1000);
+              break;
+            case 4:
+              geoAni.run(geoAni.targets.grid, 1000);
+              break;
+            case 6:
+              geoAni.destory();
+              logoAni.draw();
+              break;
+          }
+        }
+
+        var ini = 0;
+        intervalID = setInterval(function () {
+          ini++;
+          ini = ini % aniList.length;
+          animationSwitch(aniList[ini]);
+        }, 8000);
+
+        animationSwitch(aniList[ini]);
       }
-      if (!geoAni.show) {
-        geoAni.reset();
-      }
-      geoAni.run(geoAni.targets.sphere, 1000);
-      break;
-    case 2:
-      geoAni.run(geoAni.targets.table, 1000);
-      break;
-    case 3:
-      geoAni.run(geoAni.targets.helix, 1000);
-      break;
-    case 4:
-      geoAni.run(geoAni.targets.grid, 1000);
-      break;
-    case 5:
-      // 隐藏
-      // geoAni.run(geoAni.targets.end, 1000);
-      geoAni.destory();
-      // textAni = new .run();
-      logoAni.draw();
-      break;
+    })
   }
-}, 8000);
-geoAni.run(geoAni.targets.table, 1000);
+});
 
 
-var aniRes = [{
-    "type": "1", // 圆球
-    "time": "60" // 这个效果的播放持续时间
-  },
+/**
+     * 初始化websocket
+     */
+    function initWebsocket() 
+    {
+        ws = new WebSocket(socketUrl);
+        ws.onopen = onOpen;
+        ws.onmessage = onMessage;
+        ws.onclose = function() {
+            //console.log("连接关闭，定时重连");
+            setTimeout(function(){
+                initWebsocket();
+            }, 3000);
+        };
+        ws.onerror = function() {
+            //console.log("出现错误");
+        };
+    }
+
+    /**
+  连接建立时发送登录信息
+  **/
+  function onOpen()
+  { 
+      wsLogin(ws);
+  }
+
+   
+    /**
+    * 发送消息
+    */
+  function wsSend(ws, url, params)
   {
-    "type": "2", //一面墙
-    "time": "60"
-  },
+      var json = {
+          'url': url,
+          'params': params
+      };
+      
+      var str = JSON.stringify(json);
+
+      ws.send(str);
+  }
+
+  /**
+  *先执行登录操作
+  *
+  */
+  function wsLogin(ws)
   {
-    "type": "3", // 立方体
-    "time": "60"
-  },
+      wsSend(ws, "checkin3d/login", {
+          "session": sessionId
+      });
+  }
+
+  /**
+  执行绑定屏幕操作
+  **/
+  function wsBindScreen()
   {
-    "type": "4", // 圆柱
-    "time": "60"
-  },
+      wsSend(ws, "checkin3d/bind_screen", {
+          "company_id": companyId,
+      });
+  }
+
+
+  /**
+  处理返回消息
+  **/
+  function onMessage(e)
   {
-    "type": "6", // 拼logo
-    "time": "60",
-    "logo": "/slavedev01_store2/setting/checkin3d/2018/01/17/20180117175720000000_1_41425_645.png" // logo的图片
-  }];
+      var data = JSON.parse(e.data);
+      
+      if (data.url == 'checkin3d/login') {
+          wsBindScreen(); 
+      } else if (data.url == 'checkin3d/start_countdown') {
+            // 倒计时的通知  该显示倒计时的效果了 
+            console.log('开始倒计时');
+
+            clearInterval(intervalID);
+            geoAni.destory(); // 销毁几何动画
+            logoAni.destory(); // 销毁logo动画
+            var num = 10;
+            var animation;
+            var intID = setInterval(function() {
+              if (num > 0) {
+                if (animation) scene.remove(animation.object);
+                animation = new TextAni(num, textureList);
+                animation.run();
+                num--;
+              } else {
+                scene.remove(animation.object);
+                // logoAni.draw();
+                // 运行操作
+                console.log('完成')
+                clearInterval(intID);
+              }
+            }, 1000);
+      }
+  }
