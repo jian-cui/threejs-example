@@ -13,22 +13,23 @@ var objects = [], // 普通动画对象
     stars = [],   // 星星对象
     dots = [],    // 文字等动态动画对象列表
     intervalID;   // 普通动画setinterval id
-  
+
+var COUNT = 200; // 默认图片数
 // 头像
-var personArray = [];
-for(var i=0;i<199;i++){
-  personArray.push({
-    image: "img/a.png"
-  });
-};
+// var personArray = [];
+// for(var i=0;i<200;i++){
+//   personArray.push({
+//     image: "img/a.png"
+//   });
+// };
 
 var table = [];
-for (var i = 0; i < personArray.length; i++) {
+for (var i = 0; i < COUNT; i++) {
   table[i] = new Object();
-  if (i < personArray.length) {
-      table[i] = personArray[i];
-      table[i].src = personArray[i].thumb_image;
-  } 
+  // if (i < personArray.length) {
+  //     table[i] = personArray[i];
+  //     table[i].src = personArray[i].thumb_image;
+  // }
   table[i].p_x = i % 20 + 1;
   table[i].p_y = Math.floor(i / 20) + 1;
 }
@@ -159,6 +160,14 @@ function GeoAni(textureList) {
     this.object.rotation.y = 0;
     scene.remove(this.object);
   }
+  this.updateTexture = function (textureList) {
+    this.textureList = textureList;
+    for (var i = 0; i < this.textureList.length; i++) {
+      if (i < this.objectList.length) {
+        this.objectList[i].material.map = this.textureList[i];
+      }
+    }
+  }
 }
 GeoAni.prototype.run = function (targetList, duration) {
   // 这里
@@ -193,6 +202,7 @@ GeoAni.prototype.run = function (targetList, duration) {
     .start();
 
 }
+
 GeoAni.prototype.init = function () {
   var object;
   // 点集
@@ -209,7 +219,7 @@ GeoAni.prototype.init = function () {
   // 平面板
   for (var i =0; i < table.length; i++) {
     object = new THREE.Object3D();
-    object.position.x = ( table [i].p_x * 140 ) - 1330;
+    object.position.x = ( table[i].p_x * 140 ) - 1330;
     object.position.y = - (table[i].p_y * 180 ) + 990;
     this.targets.table.push(object);
   }
@@ -218,7 +228,7 @@ GeoAni.prototype.init = function () {
   var vector = new THREE.Vector3();
   var spherical = new THREE.Spherical();
   for (var i =0, l = table.length; i < l; i++) {
-    var phi = Math.acos( -1 + ( 2 * i) / l);
+    var phi = Math.PI - Math.acos( -1 + ( 2 * i) / l);
     var theta = Math.sqrt( l * Math.PI ) * phi;
 
     object = new THREE.Object3D();
@@ -346,6 +356,7 @@ function SuperVirtualAni () {
 }
 SuperVirtualAni.prototype = {
   constructor: SuperVirtualAni,
+
   // 聚合动画
   run: function () {
     TWEEN.removeAll();
@@ -404,6 +415,15 @@ function TextAni(text, textureList) {
   scene.add(this.object);
   // this.meshes = 
   // scene.add(this.object);
+  // 更新纹理
+  this.updateTexture = function (textureList) {
+    this.textureList = textureList;
+    for (var i = 0; i < this.textureList.length; i++) {
+      if (i < this.dots.length) {
+        this.dots[i].material.map = this.textureList[i];
+      }
+    }
+  }
 }
 TextAni.prototype = new SuperVirtualAni();
 TextAni.prototype.constructor = TextAni;
@@ -450,7 +470,6 @@ function ImgAni (base64, textureList) {
   this.img = new Image();
   this.img.src = base64;
   this.img.onload = function () {
-    console.log(that.img)
     that.getDots(that.img);
   }
   this.show = false;
@@ -462,7 +481,7 @@ function ImgAni (base64, textureList) {
     var dot;
     for (var i=0;i < this.dots.length; i++) {
       dot = this.dots[i];
-      // dot.paint();
+
       new TWEEN.Tween(dot.mesh.position)
         .to({
           x: Math.random() * 4000 + 4000,
@@ -473,9 +492,18 @@ function ImgAni (base64, textureList) {
         .start();
     }
   }
+
 }
 ImgAni.prototype = new SuperVirtualAni();
 ImgAni.prototype.constructor = ImgAni;
+ImgAni.prototype.updateTexture = function (textureList) {
+  this.textureList = textureList;
+  for (var i = 0; i < this.textureList.length; i++) {
+    if (i < this.dots.length) {
+      this.dots[i].mesh.material.map = this.textureList[i];
+    }
+  }
+}
 ImgAni.prototype.draw = function () {
   this.show = true;
   scene.add(this.object);
@@ -547,23 +575,23 @@ Dot.prototype.paint = function () {
   this.mesh.scale.x = this.mesh.scale.y = .3;
 }
 
-document.getElementById('countdown').addEventListener('click', function () {
-  clearInterval(intervalID);
-  var num = 10;
-  var animation;
-  var intID = setInterval(function() {
-    if (num > 0) {
-      if (animation) scene.remove(animation.object);
-      animation = new TextAni(num);
-      animation.run();
-      num--;
-    } else {
-      scene.remove(animation.object);
-      logoAni.draw();
-      clearInterval(intID);
-    }
-  }, 1000);
-})
+// document.getElementById('countdown').addEventListener('click', function () {
+//   clearInterval(intervalID);
+//   var num = 10;
+//   var animation;
+//   var intID = setInterval(function() {
+//     if (num > 0) {
+//       if (animation) scene.remove(animation.object);
+//       animation = new TextAni(num);
+//       animation.run();
+//       num--;
+//     } else {
+//       scene.remove(animation.object);
+//       logoAni.draw();
+//       clearInterval(intID);
+//     }
+//   }, 1000);
+// })
 
 function onWindowResize() {
 
@@ -587,47 +615,11 @@ var api = {
 
 init();
 
-// var geoAni = new GeoAni();
-// var textAni;
-// var logoAni = new ImgAni('./img/logo.png');
-// var ini = 0;
-// intervalID = setInterval(function () {
-//   ini = ini >= 5 ? 0 : ini;
-//   ini++;
-//   switch(ini) {
-//     case 1:
-//       if (logoAni.show) {
-//         // scene.remove(logoAni.object);
-//         logoAni.dispear();
-//       }
-//       // if (!geoAni.show) {
-//       //   geoAni.reset();
-//       // }
-//       geoAni.run(geoAni.targets.sphere, 1000);
-//       break;
-//     case 2:
-//       geoAni.run(geoAni.targets.table, 1000);
-//       break;
-//     case 3:
-//       geoAni.run(geoAni.targets.helix, 1000);
-//       break;
-//     case 4:
-//       geoAni.run(geoAni.targets.grid, 1000);
-//       break;
-//     case 5:
-//       // 隐藏
-//       // geoAni.run(geoAni.targets.end, 1000);
-//       geoAni.destory();
-//       // textAni = new .run();
-//       logoAni.draw();
-//       break;
-//   }
-// }, 8000);
-// geoAni.run(geoAni.targets.table, 1000);
 var geoAni;
 var textAni;
 var logoAni;
-var textureList = []; // 默认纹理集合
+var textureList = [],   // 默认纹理集合
+    newTextureList = [];  // 新增纹理合集
 
 
 var ws = {},
@@ -641,6 +633,9 @@ $.ajax({
   url: api.getUsers,
   type: "POST",
   dataType: 'json',
+  data: {
+    num: 1
+  },
   success: function (result) {
     var list = result.list;
     
@@ -651,6 +646,45 @@ $.ajax({
     initWebsocket(); // 初始化websocket
     geoAni = new GeoAni(textureList);
     logoAni = new ImgAni('./img/logo.png', textureList);
+
+
+    // 获取新用户
+    // var newTextureList = [];
+    var newUserBool = false;
+    var last_id = 0;
+    var pullCount = 0;
+    setInterval(function () {
+      if (!newUserBool) {
+        newUserBool = true;
+        $.ajax({
+          url: api.getNewUser,
+          type: 'POST',
+          dateType: 'json',
+          data: {
+            company_id: companyId,
+            last_id: last_id,
+          },
+          success: function (result) {
+            var list = JSON.parse(result).list;
+
+            if (list.length > 0) {
+              for (var i=0; i < list.length; i++) {
+                newTextureList.push(new THREE.TextureLoader().load(list[i].avatar));
+                // textureList[pullCount % COUNT] = new THREE.TextureLoader().load(list[i].avatar);
+                // pullCount++;
+              }
+              geoAni.updateTexture(newTextureList);
+              logoAni.updateTexture(newTextureList);
+              // geoAni.updateTexture(textureList);
+              // logoAni.updateTexture(textureList);
+              last_id = list[list.length - 1];
+            }
+            newUserBool = false;
+          }
+        })
+      }
+    }, 500);
+
     // 获取动画配置
     $.ajax({
       url: api.setting,
@@ -801,14 +835,14 @@ $.ajax({
             var intID = setInterval(function() {
               if (num > 0) {
                 if (animation) scene.remove(animation.object);
-                animation = new TextAni(num, textureList);
+                animation = new TextAni(num, newTextureList);
                 animation.run();
                 num--;
               } else {
                 scene.remove(animation.object);
                 // logoAni.draw();
                 // 运行操作
-                console.log('完成')
+                console.log('完成');
                 clearInterval(intID);
               }
             }, 1000);
