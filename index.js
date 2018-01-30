@@ -14,7 +14,11 @@ var objects = [], // 普通动画对象
     dots = [],    // 文字等动态动画对象列表
     intervalID;   // 普通动画setinterval id
 
+var newUserAni = []; // 新用户飞入
+
 var COUNT = 200; // 默认图片数
+var CUR_INDEX = 0;
+var MAX_COUNT = 500; // 本地存储的最大图片数
 // 头像
 // var personArray = [];
 // for(var i=0;i<200;i++){
@@ -26,10 +30,6 @@ var COUNT = 200; // 默认图片数
 var table = [];
 for (var i = 0; i < COUNT; i++) {
   table[i] = new Object();
-  // if (i < personArray.length) {
-  //     table[i] = personArray[i];
-  //     table[i].src = personArray[i].thumb_image;
-  // }
   table[i].p_x = i % 20 + 1;
   table[i].p_y = Math.floor(i / 20) + 1;
 }
@@ -64,8 +64,31 @@ function update() {
   var rotation;
   if (geoAni && geoAni.show) { 
     geoAni.object.rotation.y += 0.006;
+    if (geoAni.object.rotation.y >= 2 * Math.PI) {
+      geoAni.object.rotation.y -= 2 * Math.PI;
+    }
   }
   TWEEN.update();
+  for (var i = newUserAni.length - 1; i >=0 ; i--) {
+    var obj;
+    var userAni = newUserAni[i];
+    if (geoAni && geoAni.show) {
+      obj = geoAni.objectList[userAni.index % geoAni.objectList.length];
+    }
+    if (logoAni && logoAni.show) {
+      obj = logoAni.dots[userAni.index % logoAni.dots.length].mesh;
+    }
+    userAni.update(obj, function () {
+      // userAni.targetObject.material.map = userAni.mesh.material.map;
+      var texture = userAni.mesh.material.map;
+      geoAni.objectList[userAni.index % geoAni.objectList.length].material.map = texture;
+      // logoAni.objectList[CUR_INDEX % logoAni.objectList.length].material.map = userAni.mesh.material.map;
+      logoAni.dots[userAni.index % logoAni.dots.length].mesh.material.map = texture;
+
+      scene.remove(userAni.mesh);
+      newUserAni.splice(i, 1);
+    });
+  }
 
   updateStars();
   render();
@@ -367,6 +390,7 @@ SuperVirtualAni.prototype = {
       dot.y = dot.ry;
       dot.z = dot.rz;
       dot.paint();
+
       new TWEEN.Tween(dot.mesh.position)
         .to({
           x: dot.dx,
@@ -374,7 +398,7 @@ SuperVirtualAni.prototype = {
           z: dot.dz
         }, 500)
         .easing( TWEEN.Easing.Exponential.InOut )
-        .start();
+        .start()
     }
   },
   // 分散动画
@@ -489,7 +513,10 @@ function ImgAni (base64, textureList) {
           z: Math.random() * 4000 - 2000
         }, Math.random() * 1000 + 1000)
         .easing( TWEEN.Easing.Exponential.InOut )
-        .start();
+        .start()
+        .onComplete(function() {
+          that.destory();
+        });
     }
   }
 
@@ -544,8 +571,6 @@ ImgAni.prototype.getDots = function (img) {
   this.dots = logoParticles;
 }
 
-
-
 function Dot(centerX, centerY, centerZ, texture) {
   // 目标点坐标
   this.dx = centerX * 2;
@@ -568,6 +593,7 @@ function Dot(centerX, centerY, centerZ, texture) {
 Dot.prototype.removeFrom = function (object) {
   object.remove(this.mesh);
 }
+
 Dot.prototype.paint = function () {
   this.mesh.position.x = this.x;
   this.mesh.position.y = this.y;
@@ -575,23 +601,133 @@ Dot.prototype.paint = function () {
   this.mesh.scale.x = this.mesh.scale.y = .3;
 }
 
-// document.getElementById('countdown').addEventListener('click', function () {
-//   clearInterval(intervalID);
-//   var num = 10;
-//   var animation;
-//   var intID = setInterval(function() {
-//     if (num > 0) {
-//       if (animation) scene.remove(animation.object);
-//       animation = new TextAni(num);
-//       animation.run();
-//       num--;
-//     } else {
-//       scene.remove(animation.object);
-//       logoAni.draw();
-//       clearInterval(intID);
-//     }
-//   }, 1000);
-// })
+Dot.prototype.tween = function(targetObj) {
+  new TWEEN.Tween(this.mesh.position)
+    .to({
+      x: targetObj.position.x,
+      y: targetObj.position.y,
+      z: targetObj.position.z
+    }, 500)
+    .easing( TWEEN.Easing.Exponential.InOut )
+    .start();
+  new TWEEN.Tween( this.mesh.rotation )
+    .to({
+      x: targetObj.rotation.x, 
+      y: targetObj.rotation.y, 
+      z: targetObj.rotation.z
+    }, 500)
+    .easing( TWEEN.Easing.Exponential.InOut )
+    .start();
+}
+
+/**
+ * 新用户飞入
+ * @param {纹理} texture 
+ * @param {最终目标} targetObject 
+ */
+function NewUserFlyIn(texture, index) {
+  // this.targetObject = targetObject;
+  this.index = index;
+  this.mesh = createMesh(texture);
+  this.mesh.position.x = Math.random() * window.innerWidth - window.innerWidth / 2;
+  this.mesh.position.y = Math.random() * window.innerHeight - window.innerHeight / 2;
+  this.mesh.position.z = Math.random() * 2000 + 500;
+  // this.mesh.position.x = Math.random() * 4000 - 8000;
+  // this.mesh.position.y = Math.random() * 4000 - 2000;
+  // this.mesh.position.z = Math.random() * 4000 - 2000;
+  scene.add(this.mesh);
+  this.targetTimes = 50;
+  this.step = 8;
+  this.rotationStep = .006;
+  // this.min_step = 4;  // 移动的最小单位
+  // this.count = 0;
+  this.finishedBool = false;
+  this.move = function(cur, dest, dist) {
+    if (Math.abs(dest - cur) / this.targetTimes < this.step && dist >= 20) {
+      return cur + this.step * ( dest - cur < 0 ? -1 : 1 );
+    } else {
+      return cur + (dest- cur) / this.targetTimes;
+    }
+    // return cur + (dest - cur) / this.targetTimes;
+  }
+  this.update = function (targetObject, callback) {
+    this.targetObject = targetObject;
+    var worldPos = this.targetObject.getWorldPosition(),
+        worldRot = this.targetObject.getWorldRotation();
+
+    var x = worldPos.x,
+        y = worldPos.y,
+        z = worldPos.z,
+        rotation = worldRot;
+    var dist = this.mesh.position.distanceTo(this.targetObject.getWorldPosition());
+    this.mesh.position.x = Math.abs(x - this.mesh.position.x) <= this.step ?
+                            x : this.move( this.mesh.position.x, x, dist);
+    this.mesh.position.y = Math.abs(y - this.mesh.position.y) <= this.step ? 
+                            y : this.move( this.mesh.position.y, y, dist);
+    this.mesh.position.z = Math.abs(z - this.mesh.position.z) <= this.step ? 
+                            z : this.move( this.mesh.position.z, z, dist );
+
+
+    // this.mesh.position.x = Math.abs(x - this.mesh.position.x) <= this.step ?  x : 
+    //                           ( x - this.mesh.position.x > 0) ? this.mesh.position.x + this.step : this.mesh.position.x - this.step;
+    // this.mesh.position.y = Math.abs(y - this.mesh.position.y) <= this.step ?  y : 
+    //                           ( y - this.mesh.position.y > 0) ? this.mesh.position.y + this.step : this.mesh.position.y - this.step;
+    // this.mesh.position.z = Math.abs(z - this.mesh.position.z) <= this.step ?  z : 
+    //                           ( z - this.mesh.position.z > 0) ? this.mesh.position.z + this.step : this.mesh.position.z - this.step;
+
+    // if (this.count >= this.targetTimes / 3) {
+    // this.mesh.rotation.x = ( rotation.x - this.mesh.rotation.x ) / this.targetTimes + this.mesh.rotation.x;
+    // this.mesh.rotation.y = ( rotation.x - this.mesh.rotation.y ) / this.targetTimes + this.mesh.rotation.y;
+    // this.mesh.rotation.z = ( rotation.z - this.mesh.rotation.z ) / this.targetTimes + this.mesh.rotation.z;
+    // }
+    // this.mesh.position.x = x - this.mesh.position.x > 0 ?
+    //                         (Math.abs(x - this.mesh.position.x) < this.step ?
+    //                           x : this.mesh.position.x + this.step) : 
+    //                         (Math.abs(x - this.mesh.position.x) < this.step ?
+    //                           x : this.mesh.position.x - this.step);
+    // this.mesh.position.y = y - this.mesh.position.y > 0 ?
+    //                         (Math.abs(y - this.mesh.position.y) < this.step ?
+    //                           y : this.mesh.position.y + this.step) : 
+    //                         (Math.abs(y - this.mesh.position.y) < this.step ?
+    //                           y : this.mesh.position.y - this.step);
+    // this.mesh.position.z = z - this.mesh.position.z > 0 ?
+    //                           (Math.abs(z - this.mesh.position.z) < this.step ?
+    //                             z : this.mesh.position.z + this.step) : 
+    //                           (Math.abs(z - this.mesh.position.z) < this.step ?
+    //                             z : this.mesh.position.z - this.step);
+
+    this.mesh.rotation.x = Math.abs(rotation.x - this.mesh.rotation.x ) <= this.rotationStep ?
+                            rotation.x : (rotation.x - this.mesh.rotation.x) / this.targetTimes + this.mesh.rotation.x;
+    this.mesh.rotation.y = Math.abs(rotation.y - this.mesh.rotation.y ) <= this.rotationStep ?
+                            rotation.y : (rotation.y - this.mesh.rotation.y) / this.targetTimes + this.mesh.rotation.y;
+    this.mesh.rotation.z = Math.abs(rotation.z - this.mesh.rotation.z ) <= this.rotationStep ?
+                            rotation.z : (rotation.z - this.mesh.rotation.z) / this.targetTimes + this.mesh.rotation.z;
+
+    this.mesh.scale.x = this.mesh.scale.y = (this.targetObject.scale.x - 1) / this.targetTimes + this.mesh.scale.x;
+    // this.mesh.rotation.y = rotation.y - this.mesh.rotation.y > 0 ?
+    //                         this.mesh.rotation.y + this.rotationStep :
+    //                         this.mesh.rotation.y - this.rotationStep;
+    // this.mesh.rotation.z = rotation.z - this.mesh.rotation.z > 0 ?
+    //                         this.mesh.rotation.z + this.rotationStep :
+    //                         this.mesh.rotation.z - this.rotationStep;
+                      
+
+
+
+    // this.count++;
+    // var dist = this.mesh.position.distanceTo(this.targetObject.getWorldPosition());
+    // if (dist < 50) {
+    if (Math.abs(this.mesh.position.x - x) < 2 * this.step &&
+        Math.abs(this.mesh.position.y - y) < 2 * this.step &&
+        Math.abs(this.mesh.position.z - z) < 2 * this.step) {
+      this.finishedBool = true;
+      if (typeof callback == 'function') {
+        callback();
+      }
+    }
+  }
+}
+
 
 function onWindowResize() {
 
@@ -609,9 +745,8 @@ window.addEventListener( 'resize', onWindowResize, false );
 var api = {
   setting: 'http://wxscreen5.alltosun.net/checkin3d/api/init',
   getNewUser: 'http://wxscreen5.alltosun.net/checkin3d/api/get_new_user',
-  getUsers: 'http://wxscreen5.alltosun.net/checkin3d/api/get_default_user'
+  getDefaultUsers: 'http://wxscreen5.alltosun.net/checkin3d/api/get_default_user'
 }
-
 
 init();
 
@@ -630,7 +765,7 @@ socketUrl = 'ws://wxscreen.alltosun.net/websocket';
 
 // 获取默认头像
 $.ajax({
-  url: api.getUsers,
+  url: api.getDefaultUsers,
   type: "POST",
   dataType: 'json',
   data: {
@@ -646,7 +781,6 @@ $.ajax({
     initWebsocket(); // 初始化websocket
     geoAni = new GeoAni(textureList);
     logoAni = new ImgAni('./img/logo.png', textureList);
-
 
     // 获取新用户
     // var newTextureList = [];
@@ -668,15 +802,21 @@ $.ajax({
             var list = JSON.parse(result).list;
 
             if (list.length > 0) {
+              var txture;
+              var newObject;
               for (var i=0; i < list.length; i++) {
-                newTextureList.push(new THREE.TextureLoader().load(list[i].avatar));
-                // textureList[pullCount % COUNT] = new THREE.TextureLoader().load(list[i].avatar);
+                var t = new THREE.TextureLoader().load(list[i].avatar);
+                newTextureList.push(t);
+                textureList[CUR_INDEX % COUNT] = t;
                 // pullCount++;
+                newUserAni.push(new NewUserFlyIn(t, CUR_INDEX));
+                CUR_INDEX++;
               }
-              geoAni.updateTexture(newTextureList);
-              logoAni.updateTexture(newTextureList);
-              // geoAni.updateTexture(textureList);
-              // logoAni.updateTexture(textureList);
+              txture = newTextureList[newTextureList.length - 1];
+
+              // geoAni.updateTexture(newTextureList);
+              // logoAni.updateTexture(newTextureList);
+
               last_id = list[list.length - 1];
             }
             newUserBool = false;
