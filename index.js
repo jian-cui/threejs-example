@@ -642,6 +642,9 @@ function NewUserFlyIn(texture, index) {
   // this.min_step = 4;  // 移动的最小单位
   // this.count = 0;
   this.finishedBool = false;
+  this.destory = function () {
+    scene.remove(this.mesh);
+  }
   this.move = function(cur, dest, dist) {
     if (Math.abs(dest - cur) / this.targetTimes < this.step && dist >= 20) {
       return cur + this.step * ( dest - cur < 0 ? -1 : 1 );
@@ -703,7 +706,7 @@ function NewUserFlyIn(texture, index) {
     this.mesh.rotation.z = Math.abs(rotation.z - this.mesh.rotation.z ) <= this.rotationStep ?
                             rotation.z : (rotation.z - this.mesh.rotation.z) / this.targetTimes + this.mesh.rotation.z;
 
-    this.mesh.scale.x = this.mesh.scale.y = (this.targetObject.scale.x - 1) / this.targetTimes + this.mesh.scale.x;
+    this.mesh.scale.x = this.mesh.scale.y = (this.targetObject.scale.x - this.mesh.scale.x) / this.targetTimes + this.mesh.scale.x;
     // this.mesh.rotation.y = rotation.y - this.mesh.rotation.y > 0 ?
     //                         this.mesh.rotation.y + this.rotationStep :
     //                         this.mesh.rotation.y - this.rotationStep;
@@ -761,7 +764,7 @@ var ws = {},
 sessionId = 'jjabh33fjo77g59s2v4blot5v0', // 客户端标识
 companyId = 103866, // 屏幕标识
 socketUrl = 'ws://wxscreen.alltosun.net/websocket';
-
+var getNewUserBool = true; // 是否获取新用户
 
 // 获取默认头像
 $.ajax({
@@ -783,12 +786,11 @@ $.ajax({
     logoAni = new ImgAni('./img/logo.png', textureList);
 
     // 获取新用户
-    // var newTextureList = [];
     var newUserBool = false;
     var last_id = 0;
     var pullCount = 0;
-    setInterval(function () {
-      if (!newUserBool) {
+    function pullNewUser() {
+      if (!newUserBool && getNewUserBool) {
         newUserBool = true;
         $.ajax({
           url: api.getNewUser,
@@ -820,10 +822,18 @@ $.ajax({
               last_id = list[list.length - 1];
             }
             newUserBool = false;
+            setTimeout(function() {
+              pullNewUser();
+            }, 500);
           }
         })
       }
-    }, 500);
+    }
+    pullNewUser();
+    // setTimeout(function () {
+    //   pullNewUser();
+
+    // }, 500);
 
     // 获取动画配置
     $.ajax({
@@ -970,6 +980,13 @@ $.ajax({
             clearInterval(intervalID);
             geoAni.destory(); // 销毁几何动画
             logoAni.destory(); // 销毁logo动画
+            getNewUserBool = false; // 停止获取新用户
+            // 销毁所有新用户动画
+            for(var i = newUserAni.length - 1; i >= 0; i--) {
+              newUserAni[i].destory();
+              newUserAni.splice(i, 1);
+            }
+
             var num = 10;
             var animation;
             var intID = setInterval(function() {
