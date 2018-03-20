@@ -1,4 +1,4 @@
-var scene, camera, renderer;
+var scene, camera, renderer, glWidth, glHeight;
 
 // 动画目标
 var targets = {
@@ -19,13 +19,7 @@ var newUserAni = []; // 新用户飞入
 var COUNT = 200; // 默认图片数
 var CUR_INDEX = 0;
 var MAX_COUNT = 500; // 本地存储的最大图片数
-// 头像
-// var personArray = [];
-// for(var i=0;i<200;i++){
-//   personArray.push({
-//     image: "img/a.png"
-//   });
-// };
+var DIST = 3000
 
 var table = [];
 for (var i = 0; i < COUNT; i++) {
@@ -37,11 +31,23 @@ for (var i = 0; i < COUNT; i++) {
 function randomRange(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
 }
+
+/**
+ * 计算视口的宽度和高度
+ */
+function setSize() {
+  var vFOV = THREE.Math.degToRad( camera.fov ); // convert vertical fov to radians
+
+  glHeight = 2 * Math.tan( vFOV / 2 ) * DIST; // visible height
+  
+  glWidth = glHeight * camera.aspect;           // visible width
+}
+
 function init() {
   scene = new THREE.Scene();
   // scene.background = new THREE.Color( 0xff0000 );
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
-  camera.position.z = 3000;
+  camera.position.z = DIST;
 
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -54,6 +60,8 @@ function init() {
 
   document.getElementById('container').appendChild(renderer.domElement);
 
+  setSize();
+  
   createStars();
   // createObjects();
   update();
@@ -77,13 +85,16 @@ function update() {
     }
     if (logoAni && logoAni.show) {
       obj = logoAni.dots[userAni.index % logoAni.dots.length].mesh;
+      // logoAni.dots[userAni.index % logoAni.dots.length].mesh.material.map = texture;
     }
     userAni.update(obj, function () {
       // userAni.targetObject.material.map = userAni.mesh.material.map;
       var texture = userAni.mesh.material.map;
       geoAni.objectList[userAni.index % geoAni.objectList.length].material.map = texture;
       // logoAni.objectList[CUR_INDEX % logoAni.objectList.length].material.map = userAni.mesh.material.map;
-      logoAni.dots[userAni.index % logoAni.dots.length].mesh.material.map = texture;
+      if(logoAni && logoAni.show) {
+        logoAni.dots[userAni.index % logoAni.dots.length].mesh.material.map = texture;
+      }
 
       scene.remove(userAni.mesh);
       newUserAni.splice(i, 1);
@@ -620,6 +631,10 @@ Dot.prototype.tween = function(targetObj) {
     .start();
 }
 
+function randomNumber(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
 /**
  * 新用户飞入
  * @param {纹理} texture 
@@ -629,39 +644,71 @@ function NewUserFlyIn(texture, index) {
   // this.targetObject = targetObject;
   this.index = index;
   this.mesh = createMesh(texture);
-  this.mesh.position.x = Math.random() * window.innerWidth - window.innerWidth / 2;
-  this.mesh.position.y = Math.random() * window.innerHeight - window.innerHeight / 2;
-  this.mesh.position.z = Math.random() * 2000 + 500;
+  // this.mesh.position.x = Math.random() * window.innerWidth - window.innerWidth / 2;
+  // this.mesh.position.y = Math.random() * window.innerHeight - window.innerHeight / 2;
+  // this.mesh.position.z = Math.random() * 2000 + 500;
+
+  this.mesh.position.x = - window.innerWidth * 4 * Math.random();
+  this.mesh.position.y = - window.innerHeight * 4 * Math.random();
+  this.mesh.position.z = Math.random() * 500 + 500;
+  
   // this.mesh.position.x = Math.random() * 4000 - 8000;
   // this.mesh.position.y = Math.random() * 4000 - 2000;
   // this.mesh.position.z = Math.random() * 4000 - 2000;
-  scene.add(this.mesh);
+  this.frontPosition = [randomNumber(-glWidth / 10, glWidth / 10), randomNumber(-glHeight / 10, glHeight / 10), 2000] // 先要展示的目标位置
   this.targetTimes = 50;
   this.step = 8;
   this.rotationStep = .006;
-  // this.min_step = 4;  // 移动的最小单位
-  // this.count = 0;
+  this.stage = 0;
   this.finishedBool = false;
+  scene.add(this.mesh);
+  /** 删除对象 */
   this.destory = function () {
     scene.remove(this.mesh);
   }
   this.move = function(cur, dest, dist) {
     if (Math.abs(dest - cur) / this.targetTimes < this.step && dist >= 20) {
       return cur + this.step * ( dest - cur < 0 ? -1 : 1 );
-    } else {
-      return cur + (dest- cur) / this.targetTimes;
     }
-    // return cur + (dest - cur) / this.targetTimes;
+    return cur + (dest - cur) / this.targetTimes;
   }
-  this.update = function (targetObject, callback) {
+  this.update = function(targetObject, callback) {
+    if (this.stage === 0) {
+      this.__update2();
+    } else if (this.stage === 1) {
+      this.__update(targetObject, callback);
+    }
+  }
+  this.__update2 = function() {
+    var x, y, z, rotation;
+    // this.targetObject = targetObject;
+    x = this.frontPosition[0];
+    y = this.frontPosition[1];
+    z = this.frontPosition[2];
+    rotation = new THREE.Euler( 0, 0, 0, 'XYZ' )
+
+    var dist = this.mesh.position.distanceTo(new THREE.Vector3(x, y, z));
+    if (dist < 50) {
+      this.mesh.position = new THREE.Vector3(x, y, z);
+      this.stage++;
+    } else {  
+      this.mesh.position.x = (x - this.mesh.position.x) / this.targetTimes + this.mesh.position.x;
+      this.mesh.position.y = (y - this.mesh.position.y) / this.targetTimes + this.mesh.position.y;
+      this.mesh.position.z = (z - this.mesh.position.z) / this.targetTimes + this.mesh.position.z;
+    }
+  }
+  this.__update = function (targetObject, callback) {
+    var x, y, z, rotation;
+    
     this.targetObject = targetObject;
     var worldPos = this.targetObject.getWorldPosition(),
         worldRot = this.targetObject.getWorldRotation();
 
-    var x = worldPos.x,
-        y = worldPos.y,
-        z = worldPos.z,
-        rotation = worldRot;
+    x = worldPos.x,
+    y = worldPos.y,
+    z = worldPos.z,
+    rotation = worldRot;
+
     var dist = this.mesh.position.distanceTo(this.targetObject.getWorldPosition());
     this.mesh.position.x = Math.abs(x - this.mesh.position.x) <= this.step ?
                             x : this.move( this.mesh.position.x, x, dist);
@@ -669,7 +716,6 @@ function NewUserFlyIn(texture, index) {
                             y : this.move( this.mesh.position.y, y, dist);
     this.mesh.position.z = Math.abs(z - this.mesh.position.z) <= this.step ? 
                             z : this.move( this.mesh.position.z, z, dist );
-
 
     // this.mesh.position.x = Math.abs(x - this.mesh.position.x) <= this.step ?  x : 
     //                           ( x - this.mesh.position.x > 0) ? this.mesh.position.x + this.step : this.mesh.position.x - this.step;
@@ -713,16 +759,12 @@ function NewUserFlyIn(texture, index) {
     // this.mesh.rotation.z = rotation.z - this.mesh.rotation.z > 0 ?
     //                         this.mesh.rotation.z + this.rotationStep :
     //                         this.mesh.rotation.z - this.rotationStep;
-                      
-
-
 
     // this.count++;
     // var dist = this.mesh.position.distanceTo(this.targetObject.getWorldPosition());
-    // if (dist < 50) {
     if (Math.abs(this.mesh.position.x - x) < 2 * this.step &&
-        Math.abs(this.mesh.position.y - y) < 2 * this.step &&
-        Math.abs(this.mesh.position.z - z) < 2 * this.step) {
+      Math.abs(this.mesh.position.y - y) < 2 * this.step &&
+      Math.abs(this.mesh.position.z - z) < 2 * this.step) {
       this.finishedBool = true;
       if (typeof callback == 'function') {
         callback();
@@ -738,6 +780,8 @@ function onWindowResize() {
   camera.updateProjectionMatrix();
 
   renderer.setSize( window.innerWidth, window.innerHeight );
+  // 重新计算宽度和高度
+  setSize();
 
   render();
 
